@@ -3,7 +3,6 @@
 
         v-on:keyup.enter="onEnterHandler"
         :autofocus="true"
-        suffix="₽"
         v-model="innerData"
         @input="inputHandler"
         @update:focused="onFocusChangeHandler"

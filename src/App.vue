@@ -1,7 +1,25 @@
 <template>
     <v-app theme="dark">
-        <AnnuityCalcInput id="calc-input" @calculate="calculateEventHandler"/>
-        <AnnuityCalculator ref="calcCore"/>
+        <v-app-bar>
+            <v-container
+                class="fill-height d-flex align-center app-bar-container"
+            >
+                <v-icon
+                    icon="mdi-calculator-variant-outline"
+                    size="x-large"
+                    color="white"
+                />
+
+                <div class="text-h5">
+                    Ипотечный Калькулятор
+                </div>
+            </v-container>
+        </v-app-bar>
+        <v-main>
+            <AnnuityCalcInput id="calc-input" @calculate="calculateEventHandler" @precalculate_payment="precalculateEventHandler"/>
+            <AnnuityCalculator ref="calcCore"/>
+        </v-main>
+
     </v-app>
 </template>
 
@@ -16,7 +34,7 @@ export default defineComponent({
         AnnuityCalculator,
         AnnuityCalcInput,
     },
-    setup(props: any, ctx: any) {
+    setup() {
 
         const calcCore = ref();
 
@@ -24,9 +42,14 @@ export default defineComponent({
             calcCore.value.performCalculation();
         }
 
+        function precalculateEventHandler() {
+            calcCore.value.precalculate();
+        }
+
         return {
             calcCore,
-            calculateEventHandler
+            calculateEventHandler,
+            precalculateEventHandler
         }
     }
 });
@@ -37,5 +60,9 @@ export default defineComponent({
 
 #calc-input {
     padding: 20px;
+}
+
+.app-bar-container {
+    gap: 20px;
 }
 </style>

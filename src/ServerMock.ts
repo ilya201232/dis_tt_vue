@@ -1,5 +1,3 @@
-import {th} from "vuetify/locale";
-
 interface Response {
     code: number,
     message: string,
@@ -14,35 +12,51 @@ class ServerMock {
     // Minimal interest rates depending on credit type
     private minInterestRates = [
         {
-            creditTypeId: 1,
+            id: 1,
+            label: "Новостройка",
+            description: "Кредит на покупку квартиры в доме, который еще строится или был построен недавно.",
             interestRate: 6.4
         },
         {
-            creditTypeId: 2,
+            id: 2,
+            label: "Вторичный рынок",
+            description: "Кредит на покупку квартиры на вторичном рынке.",
             interestRate: 10.4
         },
         {
-            creditTypeId: 3,
+            id: 3,
+            label: "Покупка дома",
+            description: "Кредит на покупку дома.",
             interestRate: 5.7
         },
         {
-            creditTypeId: 4,
+            id: 4,
+            label: "Постройка дома",
+            description: "Кредит на постройку дома.",
             interestRate: 5.3
         },
         {
-            creditTypeId: 5,
+            id: 5,
+            label: "Покупка земли или дачного дома",
+            description: "Кредит на покупку земли или дачного дома.",
             interestRate: 10.7
         },
         {
-            creditTypeId: 6,
+            id: 6,
+            label: "Рефинансирование",
+            description: "Оформление ипотеки в другом банке на новых условиях для погашения существующего долга.",
             interestRate: 5.7
         },
         {
-            creditTypeId: 7,
+            id: 7,
+            label: "Гараж, машино-место или кладовая",
+            description: "Ипотека на покупку гаража и т.д.",
             interestRate: 10.9
         },
         {
-            creditTypeId: 8,
+            id: 8,
+            label: "Наличные под залог жилья",
+            description: "Ипотека для получения наличных денег под залог жилья.",
             interestRate: 10.7
         }
     ];
@@ -73,23 +87,13 @@ class ServerMock {
         };
     }
 
-    async getMinInterestRate(chosenTypeId: number): Promise<Response> {
-
-        for (const minInterestRate of this.minInterestRates) {
-            if (minInterestRate.creditTypeId === chosenTypeId) {
-                return {
-                    code: 200,
-                    message: "Ok",
-                    body: {
-                        minInterestRate: minInterestRate.interestRate
-                    }
-                };
-            }
-        }
-
+    async getCreditTypes(): Promise<Response> {
         return {
-            code: 404,
-            message: "Couldn't find min interest rate for this type id: " + chosenTypeId
+            code: 200,
+            message: "Ok",
+            body: {
+                minInterestRates: this.minInterestRates
+            }
         };
     }
 
@@ -114,8 +118,6 @@ class ServerMock {
             message: "Ok",
             body: {
                 minInitialFee: minInitialFee,
-
-                // TODO: make step depend on chosenHousingCost
                 initialFeeStep: this.initialFeeStepBase,
             }
         };

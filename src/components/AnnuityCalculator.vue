@@ -2,13 +2,19 @@
     <div class="calc-core">
         <v-dialog
             v-model="isOpen"
-            persistent
             scrollable
         >
             <v-card>
-                <v-card-title>Select Country</v-card-title>
+                <v-card-title
+                    class="d-flex justify-center text-h4"
+                >
+                    План выплаты ипотеки
+                </v-card-title>
                 <v-divider></v-divider>
-                <v-table>
+                <v-table
+                    fixed-header
+                    :height="calculateTableHeight()"
+                >
                     <thead>
                     <tr>
                         <th>Дата</th>
@@ -39,7 +45,7 @@
 </template>
 
 <script lang="ts">
-import {reactive, ref} from "vue";
+import {reactive, ref, watch} from "vue";
 import {useStore} from "@/store";
 
 export default {
@@ -53,7 +59,7 @@ export default {
         const creditTerm = reactive(useStore().creditTerm);
         const interestRate = reactive(useStore().interestRate);
 
-        const fixedPayment = ref(0);
+        const fixedPayment = reactive(useStore().fixedPayment);
 
         const creditPlan = ref<[{
             currentDate: { year: number, month: number },
@@ -63,6 +69,7 @@ export default {
             debtRemain: number
         }?]>([]);
 
+        // Calculates payment amount
         function calcPaymentAmount(money: number, percentage: number) {
             fixedPayment.value =
                 (percentage * Math.pow(percentage + 1, creditTerm.value * 12)) /
@@ -113,10 +120,30 @@ export default {
             isOpen.value = true;
         }
 
+        function precalculate() {
+            const percentage = Math.pow(1 + interestRate.value / 100, 1/16) - 1;
+
+            let moneyLeft = housingCost.value - initialFee.value;
+
+            calcPaymentAmount(moneyLeft, percentage);
+        }
+
+        function calculateTableHeight() {
+
+            if (creditTerm.value === 1) {
+                return innerHeight * 0.5;
+            } else {
+                return innerHeight * 0.8;
+            }
+
+        }
+
         return {
             performCalculation,
             isOpen,
-            creditPlan
+            creditPlan,
+            precalculate,
+            calculateTableHeight
         }
     }
 }
