@@ -1,3 +1,5 @@
+import {th} from "vuetify/locale";
+
 interface Response {
     code: number,
     message: string,
@@ -13,7 +15,7 @@ class ServerMock {
     private minInterestRates = [
         {
             creditTypeId: 1,
-            interestRate: 5.7
+            interestRate: 6.4
         },
         {
             creditTypeId: 2,
@@ -56,6 +58,9 @@ class ServerMock {
     // Credit terms boundaries in years
     private minCreditTerm = 1;
     private maxCreditTerm = 30;
+
+
+    private minCreditSum = 1500000;
 
 
     async getSalaryCardDif():Promise<Response> {
@@ -125,6 +130,16 @@ class ServerMock {
                 maxCreditTerm: this.maxCreditTerm,
             }
         };
+    }
+
+    async getMinCreditSum(): Promise<Response> {
+        return {
+            code: 200,
+            message: "Ok",
+            body: {
+                minCreditSum: this.minCreditSum
+            }
+        }
     }
 }
 

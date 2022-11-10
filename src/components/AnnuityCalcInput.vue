@@ -15,12 +15,13 @@
             color="green"
         ></v-switch>
 
-        <div class="housing-cost-part">
+        <div id="housing-cost-part">
             <div>Стоимость жилья</div>
 
             <v-currency-input
                 v-if="isHousingCostInputActive"
                 v-model="housingCostTmp"
+                @onFocusLoose="closeAllInputs"
                 @onEnterKey="applyHousingCostInput"
             ></v-currency-input>
             <div
@@ -45,12 +46,13 @@
             </div>
         </div>
 
-        <div class="initial-fee-part">
+        <div id="initial-fee-part">
             <div>Первоначальный взнос</div>
 
             <v-currency-input
                 v-if="isInitialFeeInputActive"
                 v-model="initialFeeTmp"
+                @onFocusLoose="closeAllInputs"
                 @onEnterKey="applyInitialFeeInput"
             ></v-currency-input>
             <div
@@ -75,12 +77,13 @@
             </div>
         </div>
 
-        <div class="credit-term-part">
+        <div id="credit-term-part">
             <div>Срок кредита</div>
 
             <v-currency-input
                 v-if="isCreditTermInputActive"
                 v-model="creditTermTmp"
+                @onFocusLoose="closeAllInputs"
                 @onEnterKey="applyCreditTermInput"
             ></v-currency-input>
             <div
@@ -105,13 +108,16 @@
             </div>
         </div>
 
+        Interest Rate: {{ interestRate }} <br/>
         <v-btn
+            type="submit"
             rounded="lg"
             variant="outlined"
-            @click="emitCalculate"
+            @click="handleSubmission"
         >
             Submit
         </v-btn>
+
     </div>
 </template>
 
@@ -119,7 +125,8 @@
 
 import ServerMock from "@/ServerMock";
 import VCurrencyInput from "@/components/VCurrencyInput.vue";
-import {onMounted, ref, watch} from "vue";
+import {onMounted, reactive, ref, watch} from "vue";
+import {useStore} from "@/store";
 
 export default {
     name: "AnnuityCalcInput",
@@ -165,14 +172,46 @@ export default {
         ]);
         const chosenCreditType = ref(1);
 
+        watch(chosenCreditType, async () => {
+            let response = await ServerMock.getMinInterestRate(chosenCreditType.value);
+
+            if (response.code === 200) {
+                minInterestRate.value = response.body.minInterestRate;
+
+                recalculateInterestRate();
+            } else {
+                console.error("Couldn't get min interest rate for credit type id: " + chosenCreditType.value + ".");
+                console.error("Error message: " + response.message);
+            }
+        })
+
         const hasSalaryCard = ref(true);
 
         const minInterestRate = ref();
         const salaryInterestRateDif = ref();
+        const interestRate = reactive(useStore().interestRate);
+
+        watch(hasSalaryCard, () => {
+            recalculateInterestRate();
+        })
+
+        function recalculateInterestRate() {
+            interestRate.value = Math.round(
+                (minInterestRate.value + ((hasSalaryCard.value) ? 1 : -1) * salaryInterestRateDif.value) * 100
+            ) / 100;
+        }
+
+        function closeAllInputs() {
+            isHousingCostInputActive.value = false;
+            isInitialFeeInputActive.value = false;
+            isCreditTermInputActive.value = false;
+        }
+
+        const minCreditSum = ref(0);
 
         const isHousingCostInputActive = ref(false);
         const housingCostTmp = ref(2000000);
-        const housingCost = ref(2000000);
+        const housingCost = reactive(useStore().housingCost)
         const minHousingCost = ref(2020000)
         const maxHousingCost = ref(10040000)
         const housingCostStep = ref(10000)
@@ -220,7 +259,7 @@ export default {
 
         const isInitialFeeInputActive = ref(false);
         const initialFeeTmp = ref(2000000);
-        const initialFee = ref(2000000);
+        const initialFee = reactive(useStore().initialFee)
         const minInitialFee = ref(2000000)
         const maxInitialFee = ref(10000000)
         const initialFeeStep = ref(10000)
@@ -249,7 +288,7 @@ export default {
 
         const isCreditTermInputActive = ref(false);
         const creditTermTmp = ref(1);
-        const creditTerm = ref(1);
+        const creditTerm = reactive(useStore().creditTerm)
         const minCreditTerm = ref(1)
         const maxCreditTerm = ref(30)
         const creditTermView = ref("");
@@ -339,7 +378,17 @@ export default {
         }
 
         onMounted(async () => {
-            let response = await ServerMock.getMinInterestRate(chosenCreditType.value);
+
+            let response = await ServerMock.getMinCreditSum();
+
+            if (response.code === 200) {
+                minCreditSum.value = response.body.minCreditSum;
+            } else {
+                console.error("Couldn't get min credit sum.");
+                console.error("Error message: " + response.message);
+            }
+
+            response = await ServerMock.getMinInterestRate(chosenCreditType.value);
 
             if (response.code === 200) {
                 minInterestRate.value = response.body.minInterestRate;
@@ -357,6 +406,8 @@ export default {
                 console.error("Couldn't get salary interest rate difference.");
                 console.error("Error message: " + response.message + ".");
             }
+
+            recalculateInterestRate();
 
 
             response = await ServerMock.getHousingCostSliderData();
@@ -403,20 +454,31 @@ export default {
         })
 
 
+        function handleSubmission() {
+            console.log("Submission happened!");
+
+            // TODO: show validation error message!!!
+            if (validate())
+                emitCalculate();
+        }
+
+        function validate(): boolean {
+            return housingCost.value - initialFee.value >= minCreditSum.value;
+        }
+
         function emitCalculate() {
-            ctx.emit('calculate', {
-                housingCost: housingCost.value,
-                initialFee: initialFee.value,
-                creditTerm: creditTerm.value,
-                interestRate: minInterestRate.value + ((hasSalaryCard.value) ? 1 : -1) * salaryInterestRateDif.value
-            });
+            ctx.emit('calculate');
         }
 
         return {
+            closeAllInputs,
+
             creditTypes,
             chosenCreditType,
 
             hasSalaryCard,
+
+            interestRate,
 
             isHousingCostInputActive,
             housingCostTmp,
@@ -450,7 +512,7 @@ export default {
             shortenMoneyString,
             yearsToString,
 
-            emitCalculate
+            handleSubmission
         }
     }
 }

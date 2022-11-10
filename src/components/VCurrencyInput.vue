@@ -6,6 +6,7 @@
         suffix="₽"
         v-model="innerData"
         @input="inputHandler"
+        @update:focused="onFocusChangeHandler"
         :rules="[
         () => !!innerData || 'This field required',
         () => !!innerData && !isNaN(Number(innerData)) || 'Only numbers are allowed',
@@ -23,7 +24,8 @@ export default {
     props: ['modelValue'],
     emits: [
         'update:modelValue',
-        'onEnterKey'
+        'onEnterKey',
+        'onFocusLoose'
     ],
     setup(props: any, ctx: any) {
 
@@ -32,6 +34,11 @@ export default {
 
         function onEnterHandler() {
             ctx.emit('onEnterKey');
+        }
+
+        function onFocusChangeHandler(focus: boolean) {
+            if (!focus)
+                ctx.emit('onFocusLoose');
         }
 
         function inputHandler() {
@@ -49,7 +56,8 @@ export default {
             data,
             innerData,
             onEnterHandler,
-            inputHandler
+            inputHandler,
+            onFocusChangeHandler
         }
     }
 }
